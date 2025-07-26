@@ -1,0 +1,52 @@
+---
+- name: Master Playbook for Enterprise Patching
+  hosts: all
+  gather_facts: false  # Defer gathering until needed
+
+- import_playbook: 10-prepatch.yml
+- import_playbook: 20-patch-linux.yml
+- import_playbook: 30-patch-windows.yml
+- import_playbook: 40-verify.yml
+
+---
+# patch_management/site.yml
+- name: Enterprise Patch Management Workflow
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    patch_window_start: "{{ ansible_date_time.hour }}"
+    maintenance_mode: false
+    rollback_enabled: true
+
+  pre_tasks:
+    - name: Validate patch readiness
+      include_tasks: tasks/pre_patch_validation.yml
+
+    - name: Enable maintenance mode
+      include_tasks: tasks/maintenance_mode.yml
+      when: maintenance_mode | bool
+
+    - name: Create system snapshot
+      include_tasks: tasks/create_snapshot.yml
+      when: rollback_enabled | bool
+
+  roles:
+    - role: patch_linux
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+    - role: patch_windows
+      when: ansible_os_family == "Windows"
+    - role: patch_verification
+
+  post_tasks:
+    - name: Verify patch installation
+      include_tasks: tasks/post_patch_verification.yml
+
+    - name: Disable maintenance mode
+      include_tasks: tasks/disable_maintenance_mode.yml
+      when: maintenance_mode | bool
+
+    - name: Generate patch report
+      include_tasks: tasks/generate_report.yml
+

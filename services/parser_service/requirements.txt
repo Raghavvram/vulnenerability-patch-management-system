@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+httpx
+aiohttp
+pydantic
+python-libnmap
+sqlalchemy
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+python-keycloak
+rq
+scikit-learn
+pytest
+locust

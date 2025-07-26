@@ -1,0 +1,6 @@
+---
+- name: Apply Security Updates to Linux Fleet
+  hosts: linux_servers
+  become: true
+  roles:
+    - patch_linux

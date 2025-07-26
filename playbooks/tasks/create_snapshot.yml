@@ -1,0 +1,4 @@
+---
+- name: Create system snapshot (placeholder)
+  ansible.builtin.debug:
+    msg: "Snapshot creation logic goes here. Integrate with your backup solution."

@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+aiohttp
+psycopg2-binary
+httpx
+pydantic

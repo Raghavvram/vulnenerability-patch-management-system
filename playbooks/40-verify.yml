@@ -1,0 +1,6 @@
+---
+- name: Post-Patch Verification
+  hosts: all
+  become: true
+  roles:
+    - patch_verification

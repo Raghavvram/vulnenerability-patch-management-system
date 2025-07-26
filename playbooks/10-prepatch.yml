@@ -1,0 +1,12 @@
+---
+- name: Pre-Patch Validation & Snapshot
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Include Pre-Patch Validation Tasks
+      include_tasks: tasks/pre_patch_validation.yml
+
+    - name: Include Snapshot Creation Task
+      include_tasks: tasks/create_snapshot.yml
+      when: ansible_virtualization_type not in ["docker", "lxc"]
