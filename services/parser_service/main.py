@@ -1,17 +1,10 @@
-from fastapi import FastAPI, HTTPException
 from libnmap.parser import NmapParser
-from pydantic import BaseModel
 import logging
 import xml.etree.ElementTree as ET
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-app = FastAPI(title="Nmap Parser Service", version="1.0.0")
-
-class NmapInput(BaseModel):
-    xml_content: str
 
 def parse_nmap_xml_safe(xml_content: str):
     """Safe XML to JSON converter for Nmap results"""
@@ -127,58 +120,24 @@ def parse_nmap_xml_safe(xml_content: str):
         except Exception as manual_error:
             raise Exception(f"Both libnmap and manual parsing failed: {libnmap_error}, {manual_error}")
 
-@app.post("/parse/xml")
-async def parse_nmap_xml(data: NmapInput):
-    """Parse Nmap XML and return structured JSON"""
-    try:
-        # Input validation
-        if not data.xml_content.strip():
-            raise HTTPException(status_code=400, detail="xml_content cannot be empty")
-        
-        logger.info("Starting Nmap XML parsing")
-        
-        # Use the safe parser
-        hosts_data = parse_nmap_xml_safe(data.xml_content)
-        
-        logger.info(f"Successfully parsed {len(hosts_data)} hosts with {sum(len(h['services']) for h in hosts_data)} services")
-        
-        return {
-            "status": "success", 
-            "hosts": hosts_data,
-            "summary": {
-                "total_hosts": len(hosts_data),
-                "total_services": sum(len(h['services']) for h in hosts_data)
-            }
-        }
-        
-    except Exception as e:
-        error_msg = f"Parsing failed: {str(e)}"
-        logger.error(error_msg)
-        logger.error(f"XML content causing error: {data.xml_content[:500]}...")
-        raise HTTPException(status_code=500, detail=error_msg)
+def parse_nmap_xml(xml_content: str):
+    """Pure function: Parse Nmap XML and return structured JSON-like dict"""
+    if not xml_content or not xml_content.strip():
+        raise ValueError("xml_content cannot be empty")
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint (always HTTP 200)"""
-    return {"status": "healthy", "service": "parser", "version": "1.0.0"}
+    logger.info("Starting Nmap XML parsing")
 
-@app.get("/")
-async def root():
-    """Root endpoint with service information"""
+    hosts_data = parse_nmap_xml_safe(xml_content)
+
+    logger.info(
+        f"Successfully parsed {len(hosts_data)} hosts with {sum(len(h['services']) for h in hosts_data)} services"
+    )
+
     return {
-        "service": "Nmap Parser Service",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/health",
-            "parse": "/parse/xml",
-            "metrics": "/metrics"
+        "status": "success",
+        "hosts": hosts_data,
+        "summary": {
+            "total_hosts": len(hosts_data),
+            "total_services": sum(len(h['services']) for h in hosts_data)
         }
     }
-
-@app.get("/metrics")
-async def metrics():
-    return {"metrics": "not_implemented", "service": "parser-service", "version": "1.0.0"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

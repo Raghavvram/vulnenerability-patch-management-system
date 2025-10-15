@@ -1,5 +1,3 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 try:
     import numpy as np
 except ImportError:
@@ -19,11 +17,6 @@ import os
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-app = FastAPI(title="Prioritization Engine", version="1.0.0")
-
-class PrioritizationRequest(BaseModel):
-    analyzed_hosts: List[Dict]
 
 class PrioritizationEngine:
     def __init__(self):
@@ -124,75 +117,36 @@ class PrioritizationEngine:
             "emergency_threshold": sla_hours * 1.2
         }
 
-# Initialize prioritization engine
-engine = PrioritizationEngine()
+async def prioritize_analyzed_hosts(analyzed_hosts: List[Dict]) -> Dict:
+    """Pure function: Prioritize analyzed vulnerability data and return structured dict"""
+    engine = PrioritizationEngine()
+    prioritized_hosts: List[Dict] = []
 
-@app.post("/prioritize")
-async def prioritize_vulnerabilities(request: PrioritizationRequest):
-    """Prioritize analyzed vulnerability data"""
-    try:
-        prioritized_hosts = []
-        
-        for host in request.analyzed_hosts:
-            prioritized_services = []
-            for service in host.get("services", []):
-                if service.get("vulnerabilities"):
-                    # Calculate priority score
-                    score, priority = engine.calculate_priority_score(service)
-                    
-                    # Assign SLA timeline
-                    sla_info = engine.assign_sla_timeline(
-                        priority, 
-                        service.get('asset_criticality', 'Medium')
-                    )
-                    
-                    service["priority_info"] = {
-                        "priority_score": round(score, 3),
-                        "priority": priority,
-                        **sla_info
-                    }
-                
-                prioritized_services.append(service)
-            
-            host_copy = host.copy()
-            host_copy["services"] = prioritized_services
-            prioritized_hosts.append(host_copy)
-        
-        return {
-            "status": "success",
-            "prioritized_hosts": prioritized_hosts,
-            "summary": {
-                "total_hosts": len(prioritized_hosts),
-                "prioritized_services": sum(1 for h in prioritized_hosts for s in h.get("services", []) if s.get("vulnerabilities"))
-            }
-        }
-    except Exception as e:
-        logger.error(f"Prioritization failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    for host in analyzed_hosts:
+        prioritized_services = []
+        for service in host.get("services", []):
+            if service.get("vulnerabilities"):
+                score, priority = engine.calculate_priority_score(service)
+                sla_info = engine.assign_sla_timeline(
+                    priority,
+                    service.get('asset_criticality', 'Medium')
+                )
+                service["priority_info"] = {
+                    "priority_score": round(score, 3),
+                    "priority": priority,
+                    **sla_info
+                }
+            prioritized_services.append(service)
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint (always HTTP 200)"""
-    return {"status": "healthy", "service": "prioritization-engine", "version": "1.0.0"}
+        host_copy = host.copy()
+        host_copy["services"] = prioritized_services
+        prioritized_hosts.append(host_copy)
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
     return {
-        "service": "Prioritization Engine",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/health",
-            "prioritize": "/prioritize",
-            "metrics": "/metrics"
+        "status": "success",
+        "prioritized_hosts": prioritized_hosts,
+        "summary": {
+            "total_hosts": len(prioritized_hosts),
+            "prioritized_services": sum(1 for h in prioritized_hosts for s in h.get("services", []) if s.get("vulnerabilities"))
         }
     }
-
-@app.get("/metrics")
-async def metrics():
-    """Metrics endpoint (not implemented)"""
-    return {"metrics": "not_implemented", "service": "prioritization-engine", "version": "1.0.0"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

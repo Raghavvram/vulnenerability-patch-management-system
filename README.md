@@ -1,47 +1,34 @@
 # Vulnerability Patch Management System
 
 ## Overview
-This project is a modular, containerized vulnerability management platform. It automates the workflow from vulnerability scanning to patch prioritization using Nmap, enrichment, LLM analysis, and ML-based prioritization.
+This project is a modular vulnerability management toolkit. It automates the workflow from vulnerability scanning to patch prioritization using Nmap parsing, enrichment, LLM analysis, and prioritization — now exposed as direct Python functions (no HTTP endpoints).
 
 ## Architecture
-- **main_orchestrator**: Entry point for all API requests, coordinates the workflow.
-- **parser_service**: Parses Nmap XML scan results.
-- **enricher_service**: Enriches scan data with vulnerability info, stores in PostgreSQL.
-- **llm_service**: Analyzes vulnerabilities using Perplexity Sonar LLM.
-- **prioritization_engine**: Assigns priority and SLA timelines using ML and rules.
-- **postgres**: Database for storing vulnerability data.
-- **redis**: Caching and job status tracking.
-- **grafana**: Dashboard for monitoring and visualization.
-- **prometheus**: Metrics collection (optional).
+- **main_orchestrator**: Provides `process_scan(xml_content: str)` to run the full pipeline.
+- **parser_service**: Provides `parse_nmap_xml(xml_content: str)`.
+- **enricher_service**: Provides `await enrich_hosts(hosts: list[dict])`.
+- **llm_service**: Provides `await analyze_enriched_hosts(enriched_hosts: list[dict])`.
+- **prioritization_engine**: Provides `await prioritize_analyzed_hosts(analyzed_hosts: list[dict])`.
 
 ## Quick Start
 1. **Clone the repository**
-2. **Run the deployment script:**
+2. **Install Python deps (optional virtualenv recommended):**
    ```
-   bash deploy_vulnerability_management.sh
+   pip install -r requirements.txt
    ```
-   This will build and start all services, set up environment variables, and initialize the database.
+3. **Call the orchestrator directly in Python:**
+   ```python
+   import asyncio
+   from services.main_orchestrator.main import process_scan
 
-3. **Submit a scan for processing:**
-   ```
-   bash test_nmap_scan_and_submit.sh
-   ```
-   Or use curl:
-   ```
-   curl -X POST http://localhost:8000/scan/process \
-     -H "Content-Type: application/json" \
-     -d '{ "xml_content": "<nmaprun ...>...</nmaprun>" }'
+   xml = "<nmaprun>...</nmaprun>"
+   result = asyncio.run(process_scan(xml))
+   print(result)
    ```
 
-4. **View results and dashboards:**
-   - **Grafana:** [http://localhost:3000](http://localhost:3000) (default user: admin, password auto-generated)
-   - **API Endpoints:**
-     - Main Orchestrator: [http://localhost:8000](http://localhost:8000)
-     - See individual service README.md files for internal endpoints.
-
-## Monitoring & Health
-- Each service exposes `/health` and `/metrics` endpoints for status and monitoring.
-- Prometheus and Grafana are pre-configured for metrics and dashboards.
+## Notes
+- HTTP endpoints were removed in favor of direct function calls for simplicity and testability.
+- If you previously used Docker services and dashboards, you can still use the database schema and monitoring assets, but they are optional now.
 
 ## Customization
 - Edit `docker-compose.yml` to change service ports, add integrations, or adjust resource limits.

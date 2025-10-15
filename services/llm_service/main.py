@@ -1,5 +1,3 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 import os
 import json
 import logging
@@ -12,20 +10,30 @@ import aiohttp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="LLM Analyzer Service - Perplexity Sonar", version="1.0.0")
+class VulnerabilityAnalysis:
+    def __init__(self, risk_score: float, priority: str, exploitation_likelihood: str,
+                 business_impact: str, remediation_steps: List[str], ansible_playbook: str,
+                 compliance_impact: str, timeline_recommendation: str):
+        self.risk_score = risk_score
+        self.priority = priority
+        self.exploitation_likelihood = exploitation_likelihood
+        self.business_impact = business_impact
+        self.remediation_steps = remediation_steps
+        self.ansible_playbook = ansible_playbook
+        self.compliance_impact = compliance_impact
+        self.timeline_recommendation = timeline_recommendation
 
-class AnalysisRequest(BaseModel):
-    enriched_hosts: List[Dict]
-
-class VulnerabilityAnalysis(BaseModel):
-    risk_score: float
-    priority: str  # Critical, High, Medium, Low
-    exploitation_likelihood: str
-    business_impact: str
-    remediation_steps: List[str]
-    ansible_playbook: str
-    compliance_impact: str
-    timeline_recommendation: str
+    def dict(self):
+        return {
+            "risk_score": self.risk_score,
+            "priority": self.priority,
+            "exploitation_likelihood": self.exploitation_likelihood,
+            "business_impact": self.business_impact,
+            "remediation_steps": self.remediation_steps,
+            "ansible_playbook": self.ansible_playbook,
+            "compliance_impact": self.compliance_impact,
+            "timeline_recommendation": self.timeline_recommendation,
+        }
 
 class PerplexityLLMAnalyzer:
     def __init__(self):
@@ -125,14 +133,14 @@ class PerplexityLLMAnalyzer:
                     else:
                         error_text = await response.text()
                         logger.error(f"Perplexity API error {response.status}: {error_text}")
-                        raise HTTPException(status_code=response.status, detail=f"Perplexity API error: {error_text}")
+                        raise RuntimeError(f"Perplexity API error: {error_text}")
                         
         except asyncio.TimeoutError:
             logger.error("Perplexity API request timed out")
-            raise HTTPException(status_code=408, detail="API request timed out")
+            raise TimeoutError("API request timed out")
         except Exception as e:
             logger.error(f"Error calling Perplexity API: {e}")
-            raise HTTPException(status_code=500, detail=f"API call failed: {str(e)}")
+            raise RuntimeError(f"API call failed: {str(e)}")
 
     def fallback_analysis(self, vulnerability_data: Dict) -> VulnerabilityAnalysis:
         """Fallback rule-based analysis when Perplexity API is unavailable"""
@@ -234,110 +242,47 @@ class PerplexityLLMAnalyzer:
             logger.error(f"Perplexity analysis failed: {e}")
             return self.fallback_analysis(vulnerability_data)
 
-# Initialize Perplexity analyzer
-analyzer = PerplexityLLMAnalyzer()
+async def analyze_enriched_hosts(enriched_hosts: List[Dict]) -> Dict:
+    """Pure function: Analyze enriched vulnerability data and return structured dict."""
+    analyzer = PerplexityLLMAnalyzer()
+    logger.info(f"Starting analysis of {len(enriched_hosts)} hosts")
+    analyzed_hosts = []
 
-@app.post("/analyze")
-async def analyze_vulnerabilities(request: AnalysisRequest):
-    """Analyze enriched vulnerability data using Perplexity Sonar"""
-    try:
-        logger.info(f"Starting analysis of {len(request.enriched_hosts)} hosts")
-        analyzed_hosts = []
-        
-        for host in request.enriched_hosts:
-            analyzed_services = []
-            
-            for service in host.get("services", []):
-                if service.get("vulnerabilities"):
-                    logger.info(f"Analyzing service {service.get('service')} on {host.get('ip')}")
-                    
-                    # Add host context to service data
-                    service_with_context = service.copy()
-                    service_with_context.update({
-                        "ip": host.get("ip"),
-                        "hostname": host.get("hostname", ""),
-                        "asset_criticality": host.get("asset_criticality", "Medium"),
-                        "internet_facing": host.get("internet_facing", False),
-                        "network_segment": host.get("network_segment", "internal")
-                    })
-                    
-                    analysis = await analyzer.analyze_vulnerability(service_with_context)
-                    service["analysis"] = analysis.dict()
-                    
-                analyzed_services.append(service)
-            
-            host_copy = host.copy()
-            host_copy["services"] = analyzed_services
-            analyzed_hosts.append(host_copy)
-        
-        analyzed_count = sum(
-            1 for h in analyzed_hosts 
-            for s in h.get("services", []) 
-            if s.get("vulnerabilities") and s.get("analysis")
-        )
-        
-        logger.info(f"Analysis completed for {analyzed_count} vulnerable services")
-        
-        return {
-            "status": "success",
-            "analyzed_hosts": analyzed_hosts,
-            "summary": {
-                "total_hosts": len(analyzed_hosts),
-                "analyzed_services": analyzed_count,
-                "llm_provider": "perplexity_sonar",
-                "model": analyzer.model
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    for host in enriched_hosts:
+        analyzed_services = []
+        for service in host.get("services", []):
+            if service.get("vulnerabilities"):
+                logger.info(f"Analyzing service {service.get('service')} on {host.get('ip')}")
+                service_with_context = service.copy()
+                service_with_context.update({
+                    "ip": host.get("ip"),
+                    "hostname": host.get("hostname", ""),
+                    "asset_criticality": host.get("asset_criticality", "Medium"),
+                    "internet_facing": host.get("internet_facing", False),
+                    "network_segment": host.get("network_segment", "internal")
+                })
+                analysis = await analyzer.analyze_vulnerability(service_with_context)
+                service["analysis"] = analysis.dict()
+            analyzed_services.append(service)
+        host_copy = host.copy()
+        host_copy["services"] = analyzed_services
+        analyzed_hosts.append(host_copy)
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint (always HTTP 200)"""
-    return {"status": "healthy", "service": "llm-analyzer-perplexity", "version": "1.0.0"}
+    analyzed_count = sum(
+        1 for h in analyzed_hosts 
+        for s in h.get("services", []) 
+        if s.get("vulnerabilities") and s.get("analysis")
+    )
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
+    logger.info(f"Analysis completed for {analyzed_count} vulnerable services")
+
     return {
-        "service": "LLM Analyzer Service - Perplexity Sonar",
-        "version": "1.0.0",
-        "provider": "Perplexity AI",
-        "model": analyzer.model,
-        "endpoints": {
-            "health": "/health",
-            "analyze": "/analyze"
-        },
-        "description": "Vulnerability analysis using Perplexity Sonar API with real-time intelligence"
-    }
-
-@app.get("/models")
-async def available_models():
-    """List available Perplexity models"""
-    return {
-        "current_model": analyzer.model,
-        "available_models": [
-            "sonar-pro",
-            "sonar-reasoning-pro", 
-            "sonar-reasoning",
-            "sonar-deep-research",
-            "sonar"
-        ],
-        "model_descriptions": {
-            "sonar-pro": "Advanced search with comprehensive analysis capabilities",
-            "sonar-reasoning-pro": "Enhanced reasoning for complex security assessments", 
-            "sonar-reasoning": "Balanced reasoning and search capabilities",
-            "sonar-deep-research": "Deep research mode for thorough investigations",
-            "sonar": "Standard Sonar model for general use"
+        "status": "success",
+        "analyzed_hosts": analyzed_hosts,
+        "summary": {
+            "total_hosts": len(analyzed_hosts),
+            "analyzed_services": analyzed_count,
+            "llm_provider": "perplexity_sonar",
+            "model": analyzer.model
         }
     }
-
-@app.get("/metrics")
-async def metrics():
-    return {"metrics": "not_implemented", "service": "llm-analyzer-perplexity", "version": "1.0.0"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
