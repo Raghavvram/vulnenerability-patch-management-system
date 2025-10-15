@@ -1,0 +1,46 @@
+{
+  "format": "NVD_CVE",
+  "version": "2.0",
+  "timestamp": "2025-10-15T00:00:00.000",
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2024-1111",
+        "descriptions": [
+          {"lang": "en", "value": "Sample v3.0 metric."}
+        ],
+        "metrics": {
+          "cvssMetricV30": [
+            {
+              "cvssData": {
+                "version": "3.0",
+                "vectorString": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "baseScore": 8.6,
+                "baseSeverity": "HIGH"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2019-0001",
+        "descriptions": [
+          {"lang": "en", "value": "Sample v2 metric."}
+        ],
+        "metrics": {
+          "cvssMetricV2": [
+            {
+              "cvssData": {
+                "version": "2.0",
+                "vectorString": "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+                "baseScore": 7.5
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

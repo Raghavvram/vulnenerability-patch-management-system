@@ -21,20 +21,9 @@ This project is a modular vulnerability management toolkit. It automates the wor
 1. **Clone the repository**
 2. **Install Python deps (optional virtualenv recommended):**
    ```
-   pip install -r requirements.txt
+   uv pip install -r requirements.txt
    ```
 3. **Call the orchestrator directly in Python:**
-## CLI Usage
-- You can also run via CLI after placing your Nmap XML on disk and `.env` with `PERPLEXITY_API_KEY`:
-  ```
-  uv run python cli.py --xml path/to/scan.xml
-  ```
-
-## Configuration
-- Copy `.env.example` to `.env` and set values:
-  - `PERPLEXITY_API_KEY`: optional; if absent, LLM falls back to rule-based.
-  - `NVD_API_KEY`: optional; improves NVD rate limits.
-  - `LOG_LEVEL`: default `INFO`.
    ```python
    import asyncio
    from services.main_orchestrator.main import process_scan
@@ -43,6 +32,33 @@ This project is a modular vulnerability management toolkit. It automates the wor
    result = asyncio.run(process_scan(xml))
    print(result)
    ```
+
+## CLI Usage
+- You can also run via CLI after placing your Nmap XML on disk and `.env` with `PERPLEXITY_API_KEY`:
+  ```
+  uv run python cli.py --xml examples/scan.xml
+  ```
+
+## Dashboard (Streamlit)
+- Start the dashboard and upload your `scan.xml` to get a beautiful breakdown (charts, tables, CVE scatter):
+  ```
+  uv run streamlit run app/dashboard.py
+  ```
+- Features:
+  - Upload Nmap XML
+  - Parse-only or full pipeline (enrichment, LLM, prioritization)
+  - Visual summaries:
+    - Treemap: Vulnerabilities by Host > Service > Port
+    - Bar chart: Service priority counts
+    - CVE scatter: CVSS vs EPSS with hover details
+  - Detailed service table and Top CVEs
+  - Raw JSON output for debugging
+
+## Configuration
+- Create `.env` with:
+  - `PERPLEXITY_API_KEY`: optional; if absent, LLM falls back to rule-based.
+  - `NVD_API_KEY`: optional; improves NVD rate limits.
+  - `LOG_LEVEL`: default `INFO`.
 
 ## Notes
 - HTTP endpoints were removed in favor of direct function calls for simplicity and testability.
