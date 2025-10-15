@@ -1,6 +1,0 @@
----
-# Global Ansible variables for all hosts
-critical_services:
-  - sshd
-  - nginx
-  - httpd

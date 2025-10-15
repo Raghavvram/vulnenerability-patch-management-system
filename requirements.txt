@@ -11,6 +11,7 @@ aiohttp
 python-libnmap
 sqlalchemy
 psycopg2-binary
+python-dotenv
 
 # Security & Auth
 python-jose[cryptography]
@@ -24,3 +25,4 @@ rq
 scikit-learn
 pytest
 locust
+uv

@@ -1,4 +1,0 @@
----
-- name: Enable maintenance mode
-  ansible.builtin.shell: touch /tmp/maintenance_mode_enabled
-  become: true

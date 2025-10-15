@@ -1,7 +1,0 @@
----
-- name: Verify critical services are running
-  ansible.builtin.service:
-    name: "{{ item }}"
-    state: started
-  loop: "{{ critical_services | default(['sshd', 'nginx', 'httpd'], true) }}"
-  ignore_errors: true

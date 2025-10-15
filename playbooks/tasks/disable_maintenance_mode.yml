@@ -1,6 +1,0 @@
----
-- name: Disable maintenance mode
-  ansible.builtin.file:
-    path: /tmp/maintenance_mode_enabled
-    state: absent
-  become: true

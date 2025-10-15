@@ -1,0 +1,15 @@
+[project]
+name = "vulnpm"
+version = "0.1.0"
+description = "Vulnerability patch management toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+package = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+

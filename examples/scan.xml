@@ -1,0 +1,15 @@
+<nmaprun>
+  <host>
+    <address addr="192.168.1.100" addrtype="ipv4"/>
+    <hostnames><hostname name="cli-host"/></hostnames>
+    <status state="up"/>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open"/>
+        <service name="http" version="Apache 2.4.41" product="apache" extrainfo="" />
+      </port>
+    </ports>
+  </host>
+</nmaprun>
+
+
