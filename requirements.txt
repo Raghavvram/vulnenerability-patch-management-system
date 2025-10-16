@@ -29,3 +29,4 @@ uv
 streamlit
 pandas
 plotly
+ruff
