@@ -10,7 +10,7 @@ __pycache__/
 .pytest_cache/
 
 # Build artifacts
-vulnpm.egg-info/
+src/vulnpm.egg-info/
 
 # Package manager lock file
 uv.lock
