@@ -118,26 +118,36 @@ class VulnerabilityEnricher:
                 return []
 
         def _cpe_variants(cpe_str: str) -> List[str]:
+            """Generate CPE string variants for wider matching."""
             parts = cpe_str.split(":")
-            if len(parts) < 7:
+            # cpe:2.3:a:vendor:product:version:update:...
+            if len(parts) < 6: # need at least up to version
                 return [cpe_str]
-            variants = [cpe_str]
-            # wildcard version variant
+            variants = {cpe_str}
+            # Add wildcard version variant
             parts_star = parts.copy()
-            parts_star[6] = "*"
-            variants.append(":".join(parts_star))
-            return list(dict.fromkeys(variants))
+            if parts_star[5] != "*":
+                parts_star[5] = "*"
+                variants.add(":".join(parts_star))
+            return list(variants)
 
         def _keyword_variants(cpe_str: str) -> List[str]:
+            """Generate keyword search variants from a CPE string."""
             parts = cpe_str.split(":")
-            vendor = parts[4] if len(parts) > 4 else ""
-            product = parts[5] if len(parts) > 5 else ""
-            version = parts[6] if len(parts) > 6 else ""
+            # cpe:2.3:a:vendor:product:version:update:...
+            if len(parts) < 6:
+                return []
+            vendor = parts[3]
+            product = parts[4]
+            version = parts[5] if parts[5] != "*" else ""
+            
             combos = []
             if vendor and product and version:
                 combos.append(f"{vendor} {product} {version}")
             if vendor and product:
                 combos.append(f"{vendor} {product}")
+            if product and version:
+                combos.append(f"{product} {version}")
             if product:
                 combos.append(product)
             # De-duplicate while preserving order
