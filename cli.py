@@ -3,6 +3,8 @@ import asyncio
 import logging
 import os
 import sys
+import json
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Ensure src/ is on sys.path for local runs
@@ -38,6 +40,14 @@ def main() -> None:
         xml_content = f.read()
 
     result = asyncio.run(process_scan(xml_content))
+    
+    # Save the full report
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_filename = f"output/{timestamp}.json"
+    with open(output_filename, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=4)
+    logging.info(f"Full analysis report saved to {output_filename}")
+
     # Print a concise summary
     prioritized_services = result.get("summary", {}).get("prioritized_services")
     total_hosts = result.get("summary", {}).get("total_hosts")

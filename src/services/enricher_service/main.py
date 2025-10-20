@@ -223,9 +223,13 @@ class VulnerabilityEnricher:
         try:
             # Generate CPE identifier
             cpe = self.generate_cpe(service_data)
+            logger.info(f"Generated CPE: {cpe}")
             
             # Query NVD API for CVEs
             cves = await self.query_nvd_api(cpe)
+            logger.info(f"Found {len(cves)} CVEs for {cpe}")
+            for cve in cves:
+                logger.debug(f"  - CVE: {cve.get('cve_id')}, CVSS: {cve.get('cvss')}, Description: {cve.get('description', '')[:100]}...")
             
             # Add EPSS scores
             enriched_cves = self.add_epss_scores(cves)

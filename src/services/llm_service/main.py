@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Dict, List
 import aiohttp
+import asyncio
 from groq import Groq
 
 # Configure module logger
