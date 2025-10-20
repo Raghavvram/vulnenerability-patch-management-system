@@ -156,7 +156,7 @@ class VulnerabilityEnricher:
         async with aiohttp.ClientSession() as session:
             # Try exact and wildcard cpeName
             for cpe_variant in _cpe_variants(cpe):
-                params_primary = {"cpeName": cpe_variant, "resultsPerPage": 200}
+                params_primary = {"virtualMatchString": cpe_variant, "resultsPerPage": 200}
                 results = await _fetch(session, params_primary)
                 if results:
                     return results

@@ -6,6 +6,7 @@ uvicorn[standard]
 openai
 httpx
 aiohttp
+groq
 
 # Parsing & Data
 python-libnmap
