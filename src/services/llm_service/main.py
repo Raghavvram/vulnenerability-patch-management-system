@@ -37,7 +37,7 @@ class VulnerabilityAnalysis:
 class GroqLLMAnalyzer:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
-        self.model = "groq/compound"
+        self.model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.client = None
         if self.api_key:
             self.client = Groq(api_key=self.api_key)
