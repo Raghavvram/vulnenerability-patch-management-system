@@ -73,13 +73,30 @@ class VulnerabilityEnricher:
         return name.replace(" ", "_") or "unknown"
 
     def generate_cpe(self, service_data: Dict) -> str:
-        """Generate CPE 2.3 identifier from service/product/version information."""
+        """Generate CPE 2.3 identifier from native Nmap CPE or service/product/version information."""
+        native_cpe = service_data.get("cpe") or ""
+        if not native_cpe and service_data.get("cpelist"):
+            native_cpe = service_data["cpelist"][0]
+
+        if native_cpe:
+            native_cpe = str(native_cpe).strip()
+            if native_cpe.startswith("cpe:2.3:"):
+                return native_cpe
+            if native_cpe.startswith("cpe:/"):
+                # Convert CPE 2.2 to CPE 2.3
+                parts = native_cpe.split(":")
+                part_type = parts[1].lstrip("/") if len(parts) > 1 else "a"
+                vendor = parts[2] if len(parts) > 2 else "*"
+                product = parts[3] if len(parts) > 3 else "*"
+                version = parts[4] if len(parts) > 4 else (service_data.get("version") or "*")
+                version = version.strip() or "*"
+                return f"cpe:2.3:{part_type}:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
+
         service_name = service_data.get("service", "") or ""
         product_name = service_data.get("product", "") or ""
         vendor = self.extract_vendor(service_name, product_name)
         product = self.normalize_product(service_name, product_name)
-        version = (service_data.get("version", "*") or "*").strip()
-        # Normalize version token (leave as-is; NVD will still match wildcard fallback)
+        version = (service_data.get("version", "*") or "*").strip() or "*"
         return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
 
     async def query_nvd_api(self, cpe: str) -> List[Dict]:
