@@ -298,7 +298,7 @@ async def analyze_enriched_hosts(enriched_hosts: List[Dict]) -> Dict:
         "summary": {
             "total_hosts": len(analyzed_hosts),
             "analyzed_services": analyzed_count,
-            "llm_provider": "groq_compound/perplexity_sonar_fallback",
+            "llm_provider": "groq/perplexity_sonar_fallback",
             "model": analyzer.groq_analyzer.model
         }
     }

@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -26,7 +25,7 @@ def test_parse_cve_data_v31():
 	assert parsed, "Expected parsed CVEs"
 	# Ensure required keys and score extraction
 	first = parsed[0]
-	assert "cve_id" in first and first["cve_id"], "CVE id missing"
+	assert first.get("cve_id"), "CVE id missing"
 	assert "cvss" in first and isinstance(first["cvss"], (int, float)), "CVSS missing"
 	assert "description" in first, "Description missing"
 

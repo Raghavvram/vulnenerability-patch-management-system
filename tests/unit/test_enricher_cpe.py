@@ -33,3 +33,13 @@ def test_generate_cpe_handles_cpe_23_directly():
     }
     cpe = enricher.generate_cpe(service_data)
     assert cpe == "cpe:2.3:a:apache:http_server:2.4.65:*:*:*:*:*:*:*"
+
+
+def test_generate_cpe_uses_cpelist_when_cpe_field_absent():
+    enricher = VulnerabilityEnricher()
+    service_data = {
+        "service": "postgres",
+        "cpelist": ["cpe:/a:postgresql:postgresql:15.2"]
+    }
+    cpe = enricher.generate_cpe(service_data)
+    assert cpe == "cpe:2.3:a:postgresql:postgresql:15.2:*:*:*:*:*:*:*"

@@ -1,4 +1,6 @@
 from pathlib import Path
+from unittest.mock import patch
+
 from services.parser_service.main import parse_nmap_xml
 
 
@@ -42,10 +44,13 @@ def test_parse_nmap_xml_manual_fallback():
         </ports>
       </host>
     </nmaprun>"""
-    result = parse_nmap_xml(sample_xml)
+    with patch("libnmap.parser.NmapParser.parse_fromstring", side_effect=RuntimeError("libnmap simulated failure")):
+        result = parse_nmap_xml(sample_xml)
+
     assert result["status"] == "success"
     svc = result["hosts"][0]["services"][0]
     assert svc["port"] == 22
     assert svc["product"] == "OpenSSH"
     assert svc["version"] == "8.9p1"
     assert svc.get("cpe") == "cpe:/a:openbsd:openssh:8.9p1"
+    assert "cpe:/a:openbsd:openssh:8.9p1" in svc.get("cpelist", [])
