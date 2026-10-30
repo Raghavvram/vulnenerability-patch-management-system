@@ -19,3 +19,6 @@ uv.lock
 src/services/prioritization_engine/model.pkl
 src/services/enricher_service/__pycache__/main.cpython-313.pyc
 src/services/llm_service/__pycache__/main.cpython-313.pyc
+
+.superpowers
+docs/
