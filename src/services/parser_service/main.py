@@ -28,15 +28,25 @@ def parse_nmap_xml_safe(xml_content: str):
             if hasattr(host, 'services') and host.services:
                 for service in host.services:
                     try:
+                        svc_dict = getattr(service, 'service_dict', {}) or {}
+                        product = svc_dict.get('product') or getattr(service, 'product', '') or ''
+                        version = svc_dict.get('version') or getattr(service, 'version', '') or ''
+                        extrainfo = svc_dict.get('extrainfo') or getattr(service, 'extrainfo', '') or ''
+                        raw_cpelist = getattr(service, 'cpelist', []) or svc_dict.get('cpelist', []) or []
+                        cpelist = [str(c) for c in raw_cpelist if c]
+                        cpe = str(cpelist[0]) if cpelist else ""
+
                         service_info = {
                             "port": getattr(service, 'port', 0),
                             "protocol": getattr(service, 'protocol', 'tcp'),
                             "service": getattr(service, 'service', 'unknown'),
-                            "version": getattr(service, 'version', ''),
+                            "version": version,
                             "state": getattr(service, 'state', 'unknown'),
                             "banner": getattr(service, 'banner', ''),
-                            "product": getattr(service, 'product', ''),
-                            "extrainfo": getattr(service, 'extrainfo', '')
+                            "product": product,
+                            "extrainfo": extrainfo,
+                            "cpelist": cpelist,
+                            "cpe": cpe
                         }
                         host_info["services"].append(service_info)
                     except Exception as svc_error:
@@ -96,13 +106,18 @@ def parse_nmap_xml_safe(xml_content: str):
                         version = ''
                         product = ''
                         extrainfo = ''
-                        
+                        cpelist = []
+                        cpe = ''
+
                         if service_elem is not None:
                             service_name = service_elem.get('name', 'unknown')
                             version = service_elem.get('version', '')
                             product = service_elem.get('product', '')
                             extrainfo = service_elem.get('extrainfo', '')
-                        
+                            cpe_elems = service_elem.findall('cpe')
+                            cpelist = [c.text.strip() for c in cpe_elems if c.text and c.text.strip()]
+                            cpe = cpelist[0] if cpelist else ''
+
                         service_info = {
                             "port": port_num,
                             "protocol": protocol,
@@ -111,7 +126,9 @@ def parse_nmap_xml_safe(xml_content: str):
                             "state": state,
                             "banner": '',
                             "product": product,
-                            "extrainfo": extrainfo
+                            "extrainfo": extrainfo,
+                            "cpelist": cpelist,
+                            "cpe": cpe
                         }
                         
                         host_info["services"].append(service_info)
