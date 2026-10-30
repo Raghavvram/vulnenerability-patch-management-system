@@ -4,12 +4,32 @@ version = "0.1.0"
 description = "Vulnerability patch management toolkit"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "python-libnmap>=0.7.3",
+    "aiohttp>=3.9.0",
+    "groq>=0.11.0",
+    "python-dotenv>=1.0.0",
+    "scikit-learn>=1.4.0",
+    "numpy>=1.26.0",
+    "streamlit>=1.30.0",
+    "pandas>=2.1.0",
+    "plotly>=5.18.0",
+]
 
-[tool.uv]
-package = true
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-
-
+testpaths = ["tests"]
